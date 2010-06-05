@@ -6,6 +6,7 @@ from geoserver.layergroup import LayerGroup
 from geoserver.workspace import Workspace
 from os import unlink
 import httplib2 
+import urllib
 from xml.etree.ElementTree import XML
 
 class UploadError(Exception):
@@ -50,7 +51,7 @@ class Catalog:
     send a delete request 
     XXX [more here]   
     """
-    url = object.get_url(self.service_url)
+    url = object.get_url(urllib.quote(self.service_url))
     headers = {
       "Content-type": "application/xml",
       "Accept": "application/xml"
@@ -60,7 +61,7 @@ class Catalog:
 
   
   def get_xml(self,url):
-    response, content = self.http.request(url)
+    response, content = self.http.request(urllib.quote(url))
     if response.status == 200:
         return XML(content)
     else:
@@ -79,7 +80,7 @@ class Catalog:
       "Content-type": "application/xml",
       "Accept": "application/xml"
     }
-    response = self.http.request(url, "PUT", message, headers)
+    response = self.http.request(urllib.quote(url), "PUT", message, headers)
     return response
 
   def get_store(self, name, workspace=None):
@@ -120,7 +121,7 @@ class Catalog:
     zip = prepare_upload_bundle(name, data)
     message = open(zip).read()
     try:
-      headers, response = self.http.request(ds_url, "PUT", message, headers)
+      headers, response = self.http.request(urllib.quote(ds_url), "PUT", message, headers)
       if headers.status != 201:
           raise UploadError(response)
     finally:
@@ -153,7 +154,7 @@ class Catalog:
 
     cs_url = "%s/workspaces/%s/coveragestores/%s/file.%s" % (self.service_url, workspace.name, name, ext)
     try:
-      headers, response = self.http.request(cs_url, "PUT", message, headers)
+      headers, response = self.http.request(urllib.quote(cs_url), "PUT", message, headers)
       if headers.status != 201:
           raise UploadError(response)
     finally:

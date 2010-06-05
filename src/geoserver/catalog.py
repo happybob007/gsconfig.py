@@ -7,6 +7,7 @@ from geoserver.workspace import Workspace
 from os import unlink
 import httplib2 
 import urllib
+import urlparse
 from xml.etree.ElementTree import XML
 
 class UploadError(Exception):
@@ -51,7 +52,7 @@ class Catalog:
     send a delete request 
     XXX [more here]   
     """
-    url = object.get_url(urllib.quote(self.service_url))
+    url = object.get_url(safe_urlquote(self.service_url))
     headers = {
       "Content-type": "application/xml",
       "Accept": "application/xml"
@@ -61,7 +62,7 @@ class Catalog:
 
   
   def get_xml(self,url):
-    response, content = self.http.request(urllib.quote(url))
+    response, content = self.http.request(safe_urlquote(url))
     if response.status == 200:
         return XML(content)
     else:
@@ -80,7 +81,7 @@ class Catalog:
       "Content-type": "application/xml",
       "Accept": "application/xml"
     }
-    response = self.http.request(urllib.quote(url), "PUT", message, headers)
+    response = self.http.request(safe_urlquote(url), "PUT", message, headers)
     return response
 
   def get_store(self, name, workspace=None):
@@ -121,7 +122,7 @@ class Catalog:
     zip = prepare_upload_bundle(name, data)
     message = open(zip).read()
     try:
-      headers, response = self.http.request(urllib.quote(ds_url), "PUT", message, headers)
+      headers, response = self.http.request(safe_urlquote(ds_url), "PUT", message, headers)
       if headers.status != 201:
           raise UploadError(response)
     finally:
@@ -154,7 +155,7 @@ class Catalog:
 
     cs_url = "%s/workspaces/%s/coveragestores/%s/file.%s" % (self.service_url, workspace.name, name, ext)
     try:
-      headers, response = self.http.request(urllib.quote(cs_url), "PUT", message, headers)
+      headers, response = self.http.request(safe_urlquote(cs_url), "PUT", message, headers)
       if headers.status != 201:
           raise UploadError(response)
     finally:
@@ -269,3 +270,13 @@ class Catalog:
 
   def set_default_workspace(self):
     raise NotImplementedError()
+
+def safe_urlquote(url):
+    '''Safely quote a url.
+    When quoteing a url, only quote the path.
+    '''
+    parts = urlparse.urlparse(url)
+    newpath = urllib.quote(parts.path)
+    new_parts = (parts.scheme, parts.netloc, newpath, parts.params, parts.query, parts.fragment)
+    return urlparse.urlunparse(new_parts)
+

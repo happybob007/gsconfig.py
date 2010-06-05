@@ -15,6 +15,9 @@ Sample Layer Creation Code
 
 ::
 
+    # The shapefile_and_friends bit below doesn't seem to work anymore.
+    # It's probably OBE.
+
     from geoserver.catalog import Catalog
     cat = Catalog("http://localhost:8080/geoserver/")
     topp = self.cat.get_workspace("topp")
